@@ -1,8 +1,15 @@
 <#
 .SYNOPSIS
 Script for sorting out pictures taken on a camera or phone into folders to simplify album creation
+.DESCRIPTION
+Place this script in the root of your SD Card for your camera and run it (right click -> Run with PowerShell to process the pictures currently on the card)
+If the format of your pictures is different, or this is your first time, try running it with -whatIf, or create a backup beforehand.
+.EXAMPLE
+PreprocessPictures.ps1 -whatIf
+.EXAMPLE
+PreprocessPictures.ps1
 .LINK
-https://github.com/grantborthwick/ProcessPictures/blob/master/ProcessPictures.ps1
+https://github.com/grantborthwick/ProcessPictures/blob/master/PreprocessPictures.ps1
 .LICENSE
 MIT License
 
@@ -28,13 +35,15 @@ SOFTWARE.
 #>
 [CmdletBinding()]
 param(
-    [switch]$whatIf
+    [switch]$whatIf,
+    [string[]]$inputDir = "$PSScriptRoot\DCIM\Camera\*_*.*", "$PSScriptRoot\DCIM\*CANON\*_*.*"
+    [string]$outputDir = "$PSScriptRoot\albums"
 )
 
 $ErrorActionPreference = "Stop"
 
-$outputDir = "$PSScriptRoot\albums"
-Get-ChildItem "$PSScriptRoot\DCIM\*CANON\*_*.*" -file | ForEach-Object {
+$outputDir = $outputDir
+Get-ChildItem $inputDir -file | ForEach-Object {
     $date = $_.CreationTime.Date.toString("yyyy.MM.dd")
     $fullDate = $_.CreationTime.ToString("yyyy.MM.ddTHH.mm.ss")
     if (-not $whatIf) {
@@ -42,7 +51,7 @@ Get-ChildItem "$PSScriptRoot\DCIM\*CANON\*_*.*" -file | ForEach-Object {
             $null = mkdir "$outputDir\$date"
         }
     }
-    if (-not ($_.Name -match "(.*)_([0-9]*)\.(.*)")) {
+    if ($_.Name -notmatch "(.*)_([0-9]*_?[0-9]*)\.(.*)") {
         throw "Failed to parse name for $($_.FullName)"
     }
 
@@ -52,7 +61,5 @@ Get-ChildItem "$PSScriptRoot\DCIM\*CANON\*_*.*" -file | ForEach-Object {
     $extension = $matches[3]
     $newPath = "$outputDir\$date\$fullDate ${prefix}_${dir}_$number.$extension"
     Write-Host "Moving $($_.FullName) to $newPath"
-    if (-not $whatIf) {
-        Move-Item $_.FullName $newPath
-    }
+    Move-Item $_.FullName $newPath -whatIf:$whatIf
 }
