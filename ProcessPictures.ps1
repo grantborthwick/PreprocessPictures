@@ -1,6 +1,8 @@
 <#
 .SYNOPSIS
 Script for sorting out pictures taken on a camera or phone into folders to simplify album creation
+.LINK
+https://github.com/grantborthwick/ProcessPictures/blob/master/ProcessPictures.ps1
 .LICENSE
 MIT License
 
