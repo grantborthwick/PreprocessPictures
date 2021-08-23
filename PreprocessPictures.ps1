@@ -9,7 +9,7 @@ PreprocessPictures.ps1 -whatIf
 .EXAMPLE
 PreprocessPictures.ps1
 .LINK
-https://github.com/grantborthwick/ProcessPictures/blob/master/PreprocessPictures.ps1
+https://github.com/grantborthwick/PreprocessPictures/blob/master/PreprocessPictures.ps1
 .LICENSE
 MIT License
 
