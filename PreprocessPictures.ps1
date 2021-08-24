@@ -44,22 +44,43 @@ $ErrorActionPreference = "Stop"
 
 $outputDir = $outputDir
 Get-ChildItem $inputDir -file | ForEach-Object {
-    $date = $_.CreationTime.Date.toString("yyyy.MM.dd")
-    $fullDate = $_.CreationTime.ToString("yyyy.MM.ddTHH.mm.ss")
+    $dateTime = if ($_.LastWriteTime -lt $_.CreationTime) { $_.LastWriteTime } else { $_.CreationTime }
+    $date = $dateTime.Date.ToString("yyyy.MM.dd")
+    $fullDate = $dateTime.ToString("yyyy.MM.ddTHH.mm.ss")
+    
+    # unix timecode
+    if ($_.Name -match "[0-9]{13}") {
+        # See https://michlstechblog.info/blog/powershell-convert-unix-timestamp-to-datetime/
+        $dateTime = [DateTime]::new(1970, 1,1) + [System.TimeSpan]::FromMilliseconds($matches[0])
+        $date = $dateTime.ToString("yyyy.MM.dd")
+        $fullDate = $dateTime.ToString("yyyy.MM.ddTHH.mm.ss")
+        $newPath = "$outputDir\$date\$fullDate $($_.Name)"
+    }
+    # file name time from a camera
+    elseif ($_.Name -match "(.*)_([0-9]*_?[0-9]*)\.(.*)") {
+        $prefix = $matches[1]
+        $number = $matches[2]
+        $extension = $matches[3]
+        $dir = $_.Directory.Name -replace "((CANON)|(Camera))",""
+        $newPath = "$outputDir\$date\$fullDate ${prefix}_${dir}_$number.$extension"
+    }
+    elseif ($_.Name -match "([0-9]{4})([0-9]{2})([0-9]{2})[-_]([0-9]{2})([0-9]{2})([0-9]{2})") {
+        $dateTime = [DateTime]::new($matches[1], $matches[2], $matches[3], $matches[4], $matches[5], $matches[6])
+        $date = $dateTime.ToString("yyyy.MM.dd")
+        $fullDate = $dateTime.ToString("yyyy.MM.ddTHH.mm.ss")
+        $newPath = "$outputDir\$date\$fullDate $($_.Name)"
+    }
+    else {
+        Write-Host "Failed to parse name for $($_.FullName)" -ForegroundColor Red -BackgroundColor Black
+        return
+    }
+    
     if (-not $whatIf) {
         if (-not (Test-Path "$outputDir\$date")) {
             $null = mkdir "$outputDir\$date"
         }
     }
-    if ($_.Name -notmatch "(.*)_([0-9]*_?[0-9]*)\.(.*)") {
-        throw "Failed to parse name for $($_.FullName)"
-    }
 
-    $prefix = $matches[1]
-    $dir = $_.Directory.Name -replace "CANON",""
-    $number = $matches[2]
-    $extension = $matches[3]
-    $newPath = "$outputDir\$date\$fullDate ${prefix}_${dir}_$number.$extension"
     Write-Host "Moving $($_.FullName) to $newPath"
     Move-Item $_.FullName $newPath -whatIf:$whatIf
 }
