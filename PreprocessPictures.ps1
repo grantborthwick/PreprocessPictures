@@ -8,6 +8,8 @@ If the format of your pictures is different, or this is your first time, try run
 PreprocessPictures.ps1 -whatIf
 .EXAMPLE
 PreprocessPictures.ps1
+.EXAMPLE
+PreprocessPictures.ps1 -inputDir "C:\OneDrive\Pictures\Camera Roll" -outputDir "C:\OneDrive\Pictures\albums"
 .LINK
 https://github.com/grantborthwick/PreprocessPictures/blob/master/PreprocessPictures.ps1
 .LICENSE
@@ -35,9 +37,14 @@ SOFTWARE.
 #>
 [CmdletBinding()]
 param(
-    [switch]$whatIf,
+    # The input directories - change these where you're using this script to set up defaults
     [string[]]$inputDir = "$PSScriptRoot\DCIM\Camera\*_*.*", "$PSScriptRoot\DCIM\*CANON\*_*.*"
+    
+    # The output album directory - change these where you're using this script to set up defaults
     [string]$outputDir = "$PSScriptRoot\albums"
+    
+    # Whether to run the script actions in whatIf mode
+    [switch]$whatIf
 )
 
 $ErrorActionPreference = "Stop"
@@ -80,7 +87,7 @@ Get-ChildItem $inputDir -file | ForEach-Object {
             $null = mkdir "$outputDir\$date"
         }
     }
-
+    
     Write-Host "Moving $($_.FullName) to $newPath"
     Move-Item $_.FullName $newPath -whatIf:$whatIf
 }
