@@ -67,7 +67,7 @@ if ((-not $skipUpdate) -and (-not (Test-Path "$PSScriptRoot\.git"))) {
     $url = "https://raw.githubusercontent.com/grantborthwick/PreprocessPictures/master/$($MyInvocation.MyCommand.Name)"
     try {
         Write-Host "Checking for an update from $url"
-        $content = (((Invoke-RestMethod $url -Headers @{ "Cache-Control" = "no-cache" })) -split "`n") -replace "`r","" -join "`n").Trim()
+        $content = ((((Invoke-RestMethod $url -Headers @{ "Cache-Control" = "no-cache" })) -split "`n") -replace "`r","" -join "`n").Trim()
         $oldContent = ((Get-Content $MyInvocation.MyCommand.Path -Raw) -replace "`r","" -join "`n").Trim()
         if ($content -ne $oldContent) {
             Write-Host "Updating $($MyInvocation.MyCommand.Path) from $url"
