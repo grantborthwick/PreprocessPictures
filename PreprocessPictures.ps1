@@ -14,19 +14,15 @@ PreprocessPictures.ps1 -inputDir "C:\OneDrive\Pictures\Camera Roll" -outputDir "
 https://github.com/grantborthwick/PreprocessPictures/blob/master/PreprocessPictures.ps1
 .LICENSE
 MIT License
-
 Copyright (c) 2021 Grant Borthwick
-
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
-
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
-
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -38,19 +34,55 @@ SOFTWARE.
 [CmdletBinding()]
 param(
     # The input directories - change these where you're using this script to set up defaults
-    [string[]]$inputDir = "$PSScriptRoot\DCIM\Camera\*_*.*", "$PSScriptRoot\DCIM\*CANON\*_*.*"
+    [string[]]$inputDir,
     
     # The output album directory - change these where you're using this script to set up defaults
-    [string]$outputDir = "$PSScriptRoot\albums"
+    [string]$outputDir,
     
     # Whether to run the script actions in whatIf mode
-    [switch]$whatIf
+    [switch]$whatIf,
+
+    # Skips auto-updating this script
+    [switch]$skipUpdate
 )
 
 $ErrorActionPreference = "Stop"
 
-$outputDir = $outputDir
-Get-ChildItem $inputDir -file | ForEach-Object {
+# $PSScriptRoot isn't always populating in the param default values, so populating the defaults here
+if (-not $PsBoundParameters.ContainsKey("inputDir")) {
+    $inputDir = @(
+        "$PSScriptRoot\*_*.*",
+        "$PSScriptRoot\DCIM\Camera\*_*.*",
+        "$PSScriptRoot\DCIM\*CANON\*_*.*",
+        "$PSScriptRoot\DCIM\*RICOH\*_*.*"
+    )
+}
+if (-not $PsBoundParameters.ContainsKey("outputDir")) {
+    $outputDir = "$PSScriptRoot\albums"
+}
+
+# auto-update
+if ((-not $skipUpdate) -and (-not (Test-Path "$PSScriptRoot\.git"))) {
+    $updated = $false
+    $url = "https://raw.githubusercontent.com/grantborthwick/PreprocessPictures/master/$($MyInvocation.MyCommand.Name)"
+    try {
+        Write-Host "Checking for an update from $url"
+        $content = ((Invoke-RestMethod $url) -split "`n") -replace "`r","" -join "`n"
+        $oldContent = (Get-Content $MyInvocation.MyCommand.Path -Raw) -replace "`r","" -join "`n"
+        if ($content -ne $oldContent) {
+            Write-Host "Updating $($MyInvocation.MyCommand.Path) from $url"
+            [System.IO.File]::WriteAllText($MyInvocation.MyCommand.Path, $content, [System.Text.UTF8Encoding]::new($false))
+            $updated = $true
+        }
+    } catch {
+        Write-Host "Failed to update $($MyInvocation.MyCommand.Path) from $url | $_"
+    }
+    if ($updated) {
+        & $MyInvocation.MyCommand.Path @PSBoundArguments
+    }
+}
+
+Get-ChildItem $inputDir -file -ErrorAction SilentlyContinue | ForEach-Object {
     $dateTime = if ($_.LastWriteTime -lt $_.CreationTime) { $_.LastWriteTime } else { $_.CreationTime }
     $date = $dateTime.Date.ToString("yyyy.MM.dd")
     $fullDate = $dateTime.ToString("yyyy.MM.ddTHH.mm.ss")
@@ -68,8 +100,11 @@ Get-ChildItem $inputDir -file | ForEach-Object {
         $prefix = $matches[1]
         $number = $matches[2]
         $extension = $matches[3]
-        $dir = $_.Directory.Name -replace "((CANON)|(Camera))",""
-        $newPath = "$outputDir\$date\$fullDate ${prefix}_${dir}_$number.$extension"
+        $dir = if ($_.FullName -match "DCIM") {
+            $directoryName = $_.Directory.Name -replace "((CANON)|(Camera)|(RICOH))",""
+            "_$directoryName"
+        }
+        $newPath = "$outputDir\$date\$fullDate ${prefix}${dir}_$number.$extension"
     }
     elseif ($_.Name -match "([0-9]{4})([0-9]{2})([0-9]{2})[-_]([0-9]{2})([0-9]{2})([0-9]{2})") {
         $dateTime = [DateTime]::new($matches[1], $matches[2], $matches[3], $matches[4], $matches[5], $matches[6])
