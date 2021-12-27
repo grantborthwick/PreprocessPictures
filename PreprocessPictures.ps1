@@ -51,10 +51,10 @@ $ErrorActionPreference = "Stop"
 # $PSScriptRoot isn't always populating in the param default values, so populating the defaults here
 if (-not $PsBoundParameters.ContainsKey("inputDir")) {
     $inputDir = @(
-        "$PSScriptRoot\*_*.*",
-        "$PSScriptRoot\DCIM\Camera\*_*.*",
-        "$PSScriptRoot\DCIM\*CANON\*_*.*",
-        "$PSScriptRoot\DCIM\*RICOH\*_*.*"
+        "$PSScriptRoot\.*_+.*",
+        "$PSScriptRoot\DCIM\Camera\.*_*.*",
+        "$PSScriptRoot\DCIM\*CANON\.*_*.*",
+        "$PSScriptRoot\DCIM\*RICOH\.*_*.*"
     )
 }
 if (-not $PsBoundParameters.ContainsKey("outputDir")) {
