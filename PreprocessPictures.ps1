@@ -78,7 +78,7 @@ if ((-not $skipUpdate) -and (-not (Test-Path "$PSScriptRoot\.git"))) {
         Write-Host "Failed to update $($MyInvocation.MyCommand.Path) from $url | $_"
     }
     if ($updated) {
-        & $MyInvocation.MyCommand.Path @PSBoundArguments -skipUpdate
+        & $MyInvocation.MyCommand.Path -inputDir $inputDir -outputDir $outputDir -whatIf:$whatIf -skipUpdate
     }
 }
 
