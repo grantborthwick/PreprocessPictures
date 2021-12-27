@@ -67,8 +67,8 @@ if ((-not $skipUpdate) -and (-not (Test-Path "$PSScriptRoot\.git"))) {
     $url = "https://raw.githubusercontent.com/grantborthwick/PreprocessPictures/master/$($MyInvocation.MyCommand.Name)"
     try {
         Write-Host "Checking for an update from $url"
-        $content = ((Invoke-RestMethod $url) -split "`n") -replace "`r","" -join "`n"
-        $oldContent = (Get-Content $MyInvocation.MyCommand.Path -Raw) -replace "`r","" -join "`n"
+        $content = (((Invoke-RestMethod $url) -split "`n") -replace "`r","" -join "`n").Trim()
+        $oldContent = ((Get-Content $MyInvocation.MyCommand.Path -Raw) -replace "`r","" -join "`n").Trim()
         if ($content -ne $oldContent) {
             Write-Host "Updating $($MyInvocation.MyCommand.Path) from $url"
             [System.IO.File]::WriteAllText($MyInvocation.MyCommand.Path, $content, [System.Text.UTF8Encoding]::new($false))
@@ -78,7 +78,7 @@ if ((-not $skipUpdate) -and (-not (Test-Path "$PSScriptRoot\.git"))) {
         Write-Host "Failed to update $($MyInvocation.MyCommand.Path) from $url | $_"
     }
     if ($updated) {
-        & $MyInvocation.MyCommand.Path @PSBoundArguments
+        & $MyInvocation.MyCommand.Path @PSBoundArguments -skipUpdate
     }
 }
 
