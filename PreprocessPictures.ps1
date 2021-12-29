@@ -51,10 +51,10 @@ $ErrorActionPreference = "Stop"
 # $PSScriptRoot isn't always populating in the param default values, so populating the defaults here
 if (-not $PsBoundParameters.ContainsKey("inputDir")) {
     $inputDir = @(
-        "$PSScriptRoot\.*_+.*",
-        "$PSScriptRoot\DCIM\Camera\.*_*.*",
-        "$PSScriptRoot\DCIM\*CANON\.*_*.*",
-        "$PSScriptRoot\DCIM\*RICOH\.*_*.*"
+        "$PSScriptRoot\*_*",
+        "$PSScriptRoot\DCIM\Camera\*_*",
+        "$PSScriptRoot\DCIM\*CANON\*_*",
+        "$PSScriptRoot\DCIM\*RICOH\*_*"
     )
 }
 if (-not $PsBoundParameters.ContainsKey("outputDir")) {
@@ -82,6 +82,7 @@ if ((-not $skipUpdate) -and (-not (Test-Path "$PSScriptRoot\.git"))) {
     }
 }
 
+Write-Host "Checking $inputDir"
 Get-ChildItem $inputDir -file -ErrorAction SilentlyContinue | ForEach-Object {
     $dateTime = if ($_.LastWriteTime -lt $_.CreationTime) { $_.LastWriteTime } else { $_.CreationTime }
     $date = $dateTime.Date.ToString("yyyy.MM.dd")
