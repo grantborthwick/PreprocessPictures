@@ -43,7 +43,10 @@ param(
     [switch]$whatIf,
 
     # Skips auto-updating this script
-    [switch]$skipUpdate
+    [switch]$skipUpdate,
+
+    # Allow the script to fallback to the file date when it can't parse the date from the file, which isn't always accurate
+    [switch]$fallbackToFileDate
 )
 
 $ErrorActionPreference = "Stop"
@@ -113,7 +116,10 @@ Get-ChildItem $inputDir -file -ErrorAction SilentlyContinue | ForEach-Object {
         $fullDate = $dateTime.ToString("yyyy.MM.ddTHH.mm.ss")
         $newPath = "$outputDir\$date\$fullDate $($_.Name)"
     }
-    else {
+    elseif (-not $fallbackToFileDate) {
+        Write-Host "Failed to parse name for $($_.FullName). Re-run with -fallbackToFileDate to fall back to file date properties" -ForegroundColor Red -BackgroundColor Black
+        return
+    } else {
         $item = Get-Item $_.FullName
         $earliestDate = @($item.CreationTime, $item.LastWriteTime) | Where-Object {
             ($_.ToUniversalTime() -le [DateTime]::UtcNow) -and
