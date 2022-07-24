@@ -114,8 +114,19 @@ Get-ChildItem $inputDir -file -ErrorAction SilentlyContinue | ForEach-Object {
         $newPath = "$outputDir\$date\$fullDate $($_.Name)"
     }
     else {
-        Write-Host "Failed to parse name for $($_.FullName)" -ForegroundColor Red -BackgroundColor Black
-        return
+        $item = Get-Item $_.FullName
+        $earliestDate = @($item.CreationTime, $item.LastWriteTime) | Where-Object {
+            ($_.ToUniversalTime() -le [DateTime]::UtcNow) -and
+            ($_.Year -gt 1970)
+        } | Sort-Object | Select-Object -First 1
+        if ($null -eq $earliestDate) {
+            Write-Host "Failed to parse name for $($_.FullName)" -ForegroundColor Red -BackgroundColor Black
+            return
+        }
+        $dateTime = $earliestDate
+        $date = $dateTime.ToString("yyyy.MM.dd")
+        $fullDate = $dateTime.ToString("yyyy.MM.ddTHH.mm.ss")
+        $newPath = "$outputDir\$date\$fullDate $($_.Name)"
     }
     
     if (-not $whatIf) {
