@@ -46,7 +46,10 @@ param(
     [switch]$skipUpdate,
 
     # Allow the script to fallback to the file date when it can't parse the date from the file, which isn't always accurate
-    [switch]$fallbackToFileDate
+    [switch]$fallbackToFileDate,
+    
+    # Threshold for flattening the folders that have this many pictures or fewer. Removes these folders and puts the files into the root of the output folder.
+    [int]$flattenThreshold = -1
 )
 
 $ErrorActionPreference = "Stop"
@@ -143,4 +146,18 @@ Get-ChildItem $inputDir -file -ErrorAction SilentlyContinue | ForEach-Object {
     
     Write-Host "Moving $($_.FullName) to $newPath"
     Move-Item $_.FullName $newPath -whatIf:$whatIf
+}
+
+if ($flattenThreshold -gt 0) {
+    Get-ChildItem $outputDir -directory | ForEach-Object {
+        [array]$files = Get-ChildItem $_.FullName
+        if ($files.Count -le $flattenThreshold) {
+            $files | ForEach-Object {
+                $newPath = "$outputDir\$($_.Name)"
+                Write-Host "Moving $($_.FullName) to $newPath"
+                Move-Item $_.FullName $newPath -whatIf:$whatIf
+            }
+            Remove-Item $_.FullName -whatIf:$whatIf
+        }
+    }
 }
