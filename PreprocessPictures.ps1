@@ -150,6 +150,9 @@ Get-ChildItem $inputDir -file -ErrorAction SilentlyContinue | ForEach-Object {
 
 if ($flattenThreshold -gt 0) {
     Get-ChildItem $outputDir -directory | ForEach-Object {
+        if ($_.Name -match "[a-z]") { # Skip folders that have been renamed
+            return
+        }
         [array]$files = Get-ChildItem $_.FullName
         if ($files.Count -le $flattenThreshold) {
             $files | ForEach-Object {
